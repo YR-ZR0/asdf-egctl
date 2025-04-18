@@ -4,7 +4,7 @@ set -euo pipefail
 
 GH_REPO="https://github.com/envoyproxy/gateway"
 TOOL_NAME="egctl"
-TOOL_TEST="egctl -version"
+TOOL_TEST="egctl --help"
 
 fail() {
 	echo -e "asdf-$TOOL_NAME: $*"
@@ -30,61 +30,41 @@ list_github_tags() {
 }
 
 list_all_versions() {
-	# TODO: Adapt this. By default we simply list the tag names from GitHub releases.
 	# Change this function if <YOUR TOOL> has other means of determining installable versions.
 	list_github_tags
 }
 
-# Detection based on the official install script
+get_arch() {
+  local machine=$(uname -m)
+  case "$machine" in
+    "arm64"* | "aarch64"* ) echo "arm64" ;;
+    *"64") echo "amd64" ;;
+    *) fail "Architecture not supported: $machine" ;;
+  esac
+}
+
 get_platform() {
-platform=''
-machine=$(uname -m)
-case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
-"linux")
-	case "$machine" in
-	"arm64"* | "aarch64"* ) platform='linux-arm64' ;;
-	"arm"* | "aarch"*) platform='linux-arm' ;;
-	*"64") platform='linux64' ;;
-	*) fail "Architecture not supported: $machine" ;;
-	esac
-	;;
-"darwin") platform='osx' ;;
-*) fail "OS not supported: $(uname -s)" ;;
-esac
-echo $platform
+  local platform
+  case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
+  "linux") platform="linux" ;;
+  "darwin") platform="darwin" ;;
+  *) fail "OS not supported: $(uname -s)" ;;
+  esac
+  echo "$platform"
 }
 
 download_release() {
     local version filename url
     version="$1"
     filename="$2"
-    os=$(get_platform)
-    arch="amd64"  # Default architecture
-
-    # Map platform to the correct OS name
-    case "$os" in
-    "linux64")
-        os="linux"
-        arch="amd64"
-        ;;
-    "linux-arm64")
-        os="linux"
-        arch="arm64"
-        ;;
-    "osx")
-        os="darwin"
-        arch="amd64"
-        ;;
-    *)
-        fail "Platform not supported: $os"
-        ;;
-    esac
+    platform=$(get_platform)
+    arch=$(get_arch)
 
     if [[ "$version" == "latest" ]]; then
         # For latest version, get the latest tag first
-        url="$GH_REPO/releases/download/$version/${TOOL_NAME}_${version}_${os}_${arch}.tar.gz"
+        url="$GH_REPO/releases/download/$version/${TOOL_NAME}_${version}_${platform}_${arch}.tar.gz"
     else
-        url="$GH_REPO/releases/download/v${version}/${TOOL_NAME}_v${version}_${os}_${arch}.tar.gz"
+        url="$GH_REPO/releases/download/v${version}/${TOOL_NAME}_v${version}_${platform}_${arch}.tar.gz"
     fi
 
     echo "* Downloading $TOOL_NAME release $version..."
@@ -103,8 +83,8 @@ install_version() {
 
 	(
 		mkdir -p "$install_path"
-		cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
-		chmod +x "$install_path/$TOOL_NAME"
+    mv "$ASDF_DOWNLOAD_PATH/$TOOL_NAME" "$install_path"
+    chmod +x "$install_path/$TOOL_NAME"
 
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"

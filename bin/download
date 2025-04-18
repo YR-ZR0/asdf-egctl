@@ -10,14 +10,32 @@ source "${plugin_dir}/lib/utils.bash"
 
 mkdir -p "$ASDF_DOWNLOAD_PATH"
 
-# TODO: Adapt this to proper extension and adapt extracting strategy.
 release_file="$ASDF_DOWNLOAD_PATH/$TOOL_NAME-$ASDF_INSTALL_VERSION.tar.gz"
 
 # Download tar.gz file to the download directory
 download_release "$ASDF_INSTALL_VERSION" "$release_file"
 
-#  Extract contents of tar.gz file into the download directory
-tar -xzf "$release_file" -C "$ASDF_DOWNLOAD_PATH" --strip-components=1 || fail "Could not extract $release_file"
+# Create a temporary directory for extraction
+temp_dir=$(mktemp -d)
 
-# Remove the tar.gz file since we don't need to keep it
+# Extract contents of tar.gz file into the temp directory
+tar -xzf "$release_file" -C "$temp_dir" || fail "Could not extract $release_file"
+
+# Find the binary within the extracted directory structure
+binary_path=$(find "$temp_dir" -name "$TOOL_NAME" -type f)
+
+if [[ -z "$binary_path" ]]; then
+  fail "Could not find $TOOL_NAME binary in extracted archive"
+fi
+
+# Copy the binary to the ASDF download path
+cp "$binary_path" "$ASDF_DOWNLOAD_PATH/"
+
+# Make binary executable
+chmod +x "$ASDF_DOWNLOAD_PATH/$TOOL_NAME"
+
+# Remove the temp directory and tar.gz file
+rm -rf "$temp_dir"
 rm "$release_file"
+
+echo "Successfully extracted $TOOL_NAME binary"
