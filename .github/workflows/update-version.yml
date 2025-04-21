@@ -24,7 +24,7 @@ jobs:
         id: fetch-version
         run: |
           # Get all releases and find the most recent one (excluding "latest" tag)
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/edgelesssys/edgeless/releases | \
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/envoyproxy/gateway/releases | \
             jq -r '[.[] | select(.tag_name != "latest") | .tag_name] | .[0]' | \
             sed 's/^v//')
           echo "latest_version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
