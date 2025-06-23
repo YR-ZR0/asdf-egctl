@@ -50,4 +50,5 @@ jobs:
             Automated changes by GitHub Action.
           branch: update-egctl-version
           base: main
+          sign-commits: true
           delete-branch: true
