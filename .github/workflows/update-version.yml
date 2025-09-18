@@ -23,13 +23,13 @@ jobs:
       - name: Fetch latest egctl release
         id: fetch-version
         run: |
-          # Get all releases and find the most recent one (excluding "latest" tag)
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/envoyproxy/gateway/releases | \
-            jq -r '[.[] | select(.tag_name != "latest") | .tag_name] | .[0]' | \
+            # Get all releases and find the most recent one (excluding "latest" tag and rc versions)
+            LATEST_VERSION=$(curl -s https://api.github.com/repos/envoyproxy/gateway/releases | \
+            jq -r '[.[] | select(.tag_name != "latest" and (.tag_name | contains("rc") | not)) | .tag_name] | .[0]' | \
             sed 's/^v//')
-          echo "latest_version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
-          CURRENT_VERSION=$(grep -oP 'asdf install egctl \K[0-9.]+' README.md || echo "none")
-          echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+            echo "latest_version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
+            CURRENT_VERSION=$(grep -oP 'asdf install egctl \K[0-9.]+' README.md || echo "none")
+            echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Update README if version changed
         if: steps.fetch-version.outputs.current_version != steps.fetch-version.outputs.latest_version
