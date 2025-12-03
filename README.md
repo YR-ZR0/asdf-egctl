@@ -8,7 +8,7 @@ you can add this plugin like this:
 
 ```bash
 asdf plugin add egctl https://github.com/YR-ZR0/asdf-egctl
-asdf install egctl 1.5.5
+asdf install egctl 1.4.6
 ```
 
 Currently this plugin will only get the linux 64bit binary
